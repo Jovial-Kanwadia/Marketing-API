@@ -1,128 +1,307 @@
-"use client"
-
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { useState } from "react"
 import {
-    type ColumnDef,
+    ColumnDef,
+    ColumnFiltersState,
+    SortingState,
+    VisibilityState,
     flexRender,
     getCoreRowModel,
+    getFilteredRowModel,
     getPaginationRowModel,
     getSortedRowModel,
-    type SortingState,
     useReactTable,
 } from "@tanstack/react-table"
-import { useState } from "react"
+import { ArrowUpDown, ChevronDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
+import {
+    DropdownMenu,
+    DropdownMenuCheckboxItem,
+    DropdownMenuContent,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Input } from "@/components/ui/input"
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table"
+import { Skeleton } from "@/components/ui/skeleton"
+import { CampaignPerformanceData } from "@/app/dashboard/page"
 
-interface CampaignPerformanceTableProps {
-    data: any[]
-    isLoading: boolean
-}
-
-export function CampaignPerformanceTable({ data, isLoading }: CampaignPerformanceTableProps) {
+export function CampaignPerformanceTable({ data, isLoading }: { data: CampaignPerformanceData[], isLoading: boolean }) {
     const [sorting, setSorting] = useState<SortingState>([])
+    const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
+    const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
+    const [rowSelection, setRowSelection] = useState({})
 
-    const columns: ColumnDef<any>[] = [
+    const columns: ColumnDef<CampaignPerformanceData>[] = [
         {
-            accessorKey: "name",
-            header: "Campaign Name",
+            id: "select",
+            header: ({ table }) => (
+                <Checkbox
+                    checked={
+                        table.getIsAllPageRowsSelected() ||
+                        (table.getIsSomePageRowsSelected() && "indeterminate")
+                    }
+                    onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+                    aria-label="Select all"
+                />
+            ),
+            cell: ({ row }) => (
+                <Checkbox
+                    checked={row.getIsSelected()}
+                    onCheckedChange={(value) => row.toggleSelected(!!value)}
+                    aria-label="Select row"
+                />
+            ),
+            enableSorting: false,
+            enableHiding: false,
         },
         {
-            accessorKey: "status",
-            header: "Status",
+            accessorKey: "Date",
+            header: "Date",
+            cell: ({ row }) => <div>{row.getValue("Date")}</div>,
         },
         {
-            accessorKey: "objective",
-            header: "Objective",
+            accessorKey: "ISO Week",
+            header: "ISO Week",
+            cell: ({ row }) => <div>{row.getValue("ISO Week")}</div>,
         },
         {
-            accessorKey: "spend",
-            header: "Spend",
+            accessorKey: "Month",
+            header: "Month",
+            cell: ({ row }) => <div>{row.getValue("Month")}</div>,
+        },
+        {
+            accessorKey: "Year",
+            header: "Year",
+            cell: ({ row }) => <div>{row.getValue("Year")}</div>,
+        },
+        {
+            accessorKey: "Campaing Name",
+            header: ({ column }) => {
+                return (
+                    <Button
+                        variant="ghost"
+                        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+                    >
+                        Campaign Name
+                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                    </Button>
+                )
+            },
+            cell: ({ row }) => <div>{row.getValue("Campaing Name")}</div>,
+        },
+        {
+            accessorKey: "Campaing Objective",
+            header: "Campaign Objective",
+            cell: ({ row }) => <div>{row.getValue("Campaing Objective")}</div>,
+        },
+        {
+            accessorKey: "Buying Type",
+            header: "Buying Type",
+            cell: ({ row }) => <div>{row.getValue("Buying Type")}</div>,
+        },
+        {
+            accessorKey: "Bid Strategy",
+            header: "Bid Strategy",
+            cell: ({ row }) => <div>{row.getValue("Bid Strategy")}</div>,
+        },
+        {
+            accessorKey: "Amount Spent",
+            header: ({ column }) => {
+                return (
+                    <Button
+                        variant="ghost"
+                        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+                    >
+                        Amount Spent
+                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                    </Button>
+                )
+            },
             cell: ({ row }) => {
-                const amount = Number.parseFloat(row.getValue("spend") || "0")
+                const amount = parseFloat(row.getValue("Amount Spent"))
                 const formatted = new Intl.NumberFormat("en-US", {
                     style: "currency",
                     currency: "USD",
                 }).format(amount)
-                return formatted
+                return <div className="text-right font-medium">{formatted}</div>
             },
         },
         {
-            accessorKey: "impressions",
-            header: "Impressions",
+            accessorKey: "Reach",
+            header: ({ column }) => {
+                return (
+                    <Button
+                        variant="ghost"
+                        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+                    >
+                        Reach
+                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                    </Button>
+                )
+            },
             cell: ({ row }) => {
-                return new Intl.NumberFormat("en-US").format(row.getValue("impressions") || 0)
+                const value = parseInt(row.getValue("Reach"))
+                const formatted = new Intl.NumberFormat("en-US").format(value)
+                return <div className="text-right font-medium">{formatted}</div>
             },
         },
         {
-            accessorKey: "clicks",
-            header: "Clicks",
+            accessorKey: "Impressions",
+            header: ({ column }) => {
+                return (
+                    <Button
+                        variant="ghost"
+                        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+                    >
+                        Impressions
+                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                    </Button>
+                )
+            },
             cell: ({ row }) => {
-                return new Intl.NumberFormat("en-US").format(row.getValue("clicks") || 0)
+                const value = parseInt(row.getValue("Impressions"))
+                const formatted = new Intl.NumberFormat("en-US").format(value)
+                return <div className="text-right font-medium">{formatted}</div>
             },
         },
         {
-            accessorKey: "ctr",
-            header: "CTR",
+            accessorKey: "Clicks (all)",
+            header: "Clicks (all)",
             cell: ({ row }) => {
-                const value: any = row.getValue("ctr") || 0
-                return `${(value * 100).toFixed(2)}%`
+                const value = parseInt(row.getValue("Clicks (all)"))
+                const formatted = new Intl.NumberFormat("en-US").format(value)
+                return <div className="text-right font-medium">{formatted}</div>
             },
         },
         {
-            accessorKey: "cpc",
-            header: "CPC",
+            accessorKey: "Link Clicks",
+            header: "Link Clicks",
             cell: ({ row }) => {
-                const amount = Number.parseFloat(row.getValue("cpc") || "0")
-                const formatted = new Intl.NumberFormat("en-US", {
-                    style: "currency",
-                    currency: "USD",
-                }).format(amount)
-                return formatted
+                const value = parseInt(row.getValue("Link Clicks"))
+                const formatted = new Intl.NumberFormat("en-US").format(value)
+                return <div className="text-right font-medium">{formatted}</div>
             },
         },
+        {
+            accessorKey: "Landing Page views",
+            header: "Landing Page Views",
+            cell: ({ row }) => {
+                const value = parseInt(row.getValue("Landing Page views"))
+                const formatted = new Intl.NumberFormat("en-US").format(value)
+                return <div className="text-right font-medium">{formatted}</div>
+            },
+        }
     ]
 
     const table = useReactTable({
-        data: data || [],
+        data,
         columns,
-        state: {
-            sorting,
-        },
         onSortingChange: setSorting,
+        onColumnFiltersChange: setColumnFilters,
         getCoreRowModel: getCoreRowModel(),
         getPaginationRowModel: getPaginationRowModel(),
         getSortedRowModel: getSortedRowModel(),
+        getFilteredRowModel: getFilteredRowModel(),
+        onColumnVisibilityChange: setColumnVisibility,
+        onRowSelectionChange: setRowSelection,
+        state: {
+            sorting,
+            columnFilters,
+            columnVisibility,
+            rowSelection,
+        },
     })
 
     if (isLoading) {
-        return <div className="text-center py-4">Loading campaign data...</div>
-    }
-
-    if (!data || data.length === 0) {
-        return <div className="text-center py-4">No campaign data available. Please select an ad account.</div>
+        return (
+            <div className="w-full space-y-4">
+                <div className="flex items-center gap-2">
+                    <Skeleton className="h-8 w-[250px]" />
+                    <Skeleton className="h-8 w-[100px]" />
+                </div>
+                <div className="rounded-md border">
+                    <Skeleton className="h-[400px] w-full" />
+                </div>
+            </div>
+        )
     }
 
     return (
-        <div>
+        <div className="w-full">
+            <div className="flex items-center py-4">
+                <Input
+                    placeholder="Filter by campaign name..."
+                    value={(table.getColumn("Campaing Name")?.getFilterValue() as string) ?? ""}
+                    onChange={(event) =>
+                        table.getColumn("Campaing Name")?.setFilterValue(event.target.value)
+                    }
+                    className="max-w-sm"
+                />
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="outline" className="ml-auto">
+                            Columns <ChevronDown className="ml-2 h-4 w-4" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        {table
+                            .getAllColumns()
+                            .filter((column) => column.getCanHide())
+                            .map((column) => {
+                                return (
+                                    <DropdownMenuCheckboxItem
+                                        key={column.id}
+                                        className="capitalize"
+                                        checked={column.getIsVisible()}
+                                        onCheckedChange={(value) =>
+                                            column.toggleVisibility(!!value)
+                                        }
+                                    >
+                                        {column.id}
+                                    </DropdownMenuCheckboxItem>
+                                )
+                            })}
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            </div>
             <div className="rounded-md border">
                 <Table>
                     <TableHeader>
                         {table.getHeaderGroups().map((headerGroup) => (
                             <TableRow key={headerGroup.id}>
-                                {headerGroup.headers.map((header) => (
-                                    <TableHead key={header.id}>
-                                        {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
-                                    </TableHead>
-                                ))}
+                                {headerGroup.headers.map((header) => {
+                                    return (
+                                        <TableHead key={header.id}>
+                                            {header.isPlaceholder
+                                                ? null
+                                                : flexRender(
+                                                    header.column.columnDef.header,
+                                                    header.getContext()
+                                                )}
+                                        </TableHead>
+                                    )
+                                })}
                             </TableRow>
                         ))}
                     </TableHeader>
                     <TableBody>
                         {table.getRowModel().rows?.length ? (
                             table.getRowModel().rows.map((row) => (
-                                <TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
+                                <TableRow
+                                    key={row.id}
+                                    data-state={row.getIsSelected() && "selected"}
+                                >
                                     {row.getVisibleCells().map((cell) => (
-                                        <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
+                                        <TableCell key={cell.id}>
+                                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                        </TableCell>
                                     ))}
                                 </TableRow>
                             ))
@@ -137,12 +316,28 @@ export function CampaignPerformanceTable({ data, isLoading }: CampaignPerformanc
                 </Table>
             </div>
             <div className="flex items-center justify-end space-x-2 py-4">
-                <Button variant="outline" size="sm" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>
-                    Previous
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>
-                    Next
-                </Button>
+                <div className="flex-1 text-sm text-muted-foreground">
+                    {table.getFilteredSelectedRowModel().rows.length} of{" "}
+                    {table.getFilteredRowModel().rows.length} row(s) selected.
+                </div>
+                <div className="space-x-2">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => table.previousPage()}
+                        disabled={!table.getCanPreviousPage()}
+                    >
+                        Previous
+                    </Button>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => table.nextPage()}
+                        disabled={!table.getCanNextPage()}
+                    >
+                        Next
+                    </Button>
+                </div>
             </div>
         </div>
     )

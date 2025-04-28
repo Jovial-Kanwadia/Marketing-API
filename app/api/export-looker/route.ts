@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { google } from 'googleapis';
+import { AdPerformanceData, CampaignPerformanceData } from '@/app/dashboard/page';
 
 // Initialize Google auth and sheets client
 const auth = new google.auth.JWT({
@@ -40,76 +41,92 @@ export async function POST(request: NextRequest) {
             mainSheetExists = false;
         }
 
-        // Process all data into a single main MarketingAPI sheet
-        // Enhanced headers for better Looker Studio visualization
+        // Enhanced headers based on new dashboard data structure
         const adHeaders = [
-            'Type', 'Name', 'Campaign', 'Impressions', 'Clicks', 'Spend', 'CTR', 'CPC', 'Conversions', 'Date', 'Week', 'Month', 'Quarter', 'Year'
+            'Type', 'Date', 'ISO Week', 'Month', 'Year', 'Ad Name', 'Ad Set Name', 'Campaign Name',
+            'Campaign Objective', 'Buying Type', 'Bid Strategy', 'Amount Spent', 'Reach', 'Impressions',
+            'Clicks (all)', 'Link Clicks', 'Landing Page views', 'View Content', 'View Content Value',
+            'Add To Wishlist', 'Add To Wishlist Value', 'Add To Cart', 'Add To Cart Value',
+            'Initiated Checkout', 'Initiated Checkout Value', 'Adds Payment Info', 'Add Payment Info Value',
+            'Purchase', 'Purchase Value', 'Leads', 'Lead Value', 'Contact', 'Contact Value'
         ];
 
         // Create consolidated arrays for both types of data
         const consolidatedData = [];
 
-        // Process ad data if present with enhanced date dimensions
+        // Process ad data if present with enhanced metrics
         if (Array.isArray(data.ads) && data.ads.length > 0) {
-            const processedAds = data.ads.map((item: any) => {
-                const date = item.date || new Date().toISOString().split('T')[0];
-                const dateObj = new Date(date);
-                
-                // Extract date dimensions for better reporting
-                const week = getWeekNumber(dateObj);
-                const month = dateObj.getMonth() + 1;
-                const quarter = Math.floor(month / 3) + 1;
-                const year = dateObj.getFullYear();
-                
+            const processedAds = data.ads.map((item: AdPerformanceData) => {
                 return [
                     'Ad',  // Type identifier
-                    item.ad_name || item.name || '',
-                    item.campaign_name || '',
-                    parseInt(item.impressions, 10) || 0,
-                    parseInt(item.clicks, 10) || 0,
-                    parseFloat(item.spend) || 0,
-                    parseFloat(item.ctr) || 0,
-                    parseFloat(item.cpc) || 0,
-                    parseInt(item.conversions, 10) || 0,
-                    date,
-                    week,
-                    month,
-                    quarter,
-                    year
+                    item.Date || new Date().toISOString().split('T')[0],
+                    item["ISO Week"] || '',
+                    item.Month || '',
+                    item.Year || new Date().getFullYear(),
+                    item["Ad Name"] || '',
+                    item["Ad Set Name"] || '',
+                    item["Campaing Name"] || '', // Note: there's a typo in the original interface "Campaing"
+                    item["Campaing Objective"] || '',
+                    item["Buying Type"] || '',
+                    item["Bid Strategy"] || '',
+                    parseFloat(String(item["Amount Spent"])) || 0,
+                    parseInt(String(item.Reach), 10) || 0,
+                    parseInt(String(item.Impressions), 10) || 0,
+                    parseInt(String(item["Clicks (all)"]), 10) || 0,
+                    parseInt(String(item["Link Clicks"]), 10) || 0,
+                    parseInt(String(item["Landing Page views"]), 10) || 0,
+                    parseInt(String(item["View Content"]), 10) || 0,
+                    parseFloat(String(item["View Content Conversion Value"])) || 0,
+                    parseInt(String(item["Add To Wishlist"]), 10) || 0,
+                    parseFloat(String(item["Add To Wishlist Conversion Value"])) || 0,
+                    parseInt(String(item["Add To Cart"]), 10) || 0,
+                    parseFloat(String(item["Add To Cart Conversion Value"])) || 0,
+                    parseInt(String(item["Initiated Checkout"]), 10) || 0,
+                    parseFloat(String(item["Initiated Checkout Conversion Value"])) || 0,
+                    parseInt(String(item["Adds Payment Info"]), 10) || 0,
+                    parseFloat(String(item["Add Payment Info Conversion Value"])) || 0,
+                    parseInt(String(item.Purchase), 10) || 0,
+                    parseFloat(String(item["Purchase Conversion Value"])) || 0,
+                    parseInt(String(item.Leads), 10) || 0,
+                    parseFloat(String(item["Lead Conversion Value"])) || 0,
+                    parseInt(String(item.Contact), 10) || 0,
+                    parseFloat(String(item["Contact Conversion Value"])) || 0
                 ];
             });
             consolidatedData.push(...processedAds);
             results.ads = { success: true, count: processedAds.length };
         }
 
-        // Process campaign data if present with enhanced date dimensions
+        // Process campaign data if present with enhanced metrics
         if (Array.isArray(data.campaigns) && data.campaigns.length > 0) {
-            const processedCampaigns = data.campaigns.map((item: any) => {
-                const date = item.date || new Date().toISOString().split('T')[0];
-                const dateObj = new Date(date);
-                
-                // Extract date dimensions for better reporting
-                const week = getWeekNumber(dateObj);
-                const month = dateObj.getMonth() + 1;
-                const quarter = Math.floor(month / 3) + 1;
-                const year = dateObj.getFullYear();
-                
-                return [
+            const processedCampaigns = data.campaigns.map((item: CampaignPerformanceData) => {
+                // For campaign data, create a similar array but with campaign-level data only
+                const campaignRow = [
                     'Campaign',  // Type identifier
-                    item.name || item.campaign_name || '',
-                    '', // No parent campaign 
-                    parseInt(item.impressions, 10) || 0,
-                    parseInt(item.clicks, 10) || 0,
-                    parseFloat(item.spend) || 0,
-                    parseFloat(item.ctr) || 0,
-                    parseFloat(item.cpc) || 0,
-                    parseInt(item.conversions, 10) || 0,
-                    date,
-                    week,
-                    month,
-                    quarter,
-                    year
+                    item.Date || new Date().toISOString().split('T')[0],
+                    item["ISO Week"] || '',
+                    item.Month || '',
+                    item.Year || new Date().getFullYear(),
+                    '', // No Ad Name
+                    '', // No Ad Set Name
+                    item["Campaing Name"] || '', // Note: there's a typo in the original interface "Campaing"
+                    item["Campaing Objective"] || '',
+                    item["Buying Type"] || '',
+                    item["Bid Strategy"] || '',
+                    parseFloat(String(item["Amount Spent"])) || 0,
+                    parseInt(String(item.Reach), 10) || 0,
+                    parseInt(String(item.Impressions), 10) || 0,
+                    parseInt(String(item["Clicks (all)"]), 10) || 0,
+                    parseInt(String(item["Link Clicks"]), 10) || 0,
+                    parseInt(String(item["Landing Page views"]), 10) || 0
                 ];
+
+                // Fill remaining columns with zeros for campaign data since they don't have these metrics
+                for (let i = campaignRow.length; i < adHeaders.length; i++) {
+                    campaignRow.push(0);
+                }
+
+                return campaignRow;
             });
             consolidatedData.push(...processedCampaigns);
             results.campaigns = { success: true, count: processedCampaigns.length };
@@ -164,21 +181,28 @@ export async function POST(request: NextRequest) {
             });
         }
 
-        // Also keep separate sheets for backward compatibility
+        // Also keep separate sheets for detailed ad and campaign data
         if (Array.isArray(data.ads) && data.ads.length > 0) {
             await ensureSeparateSheet(sheetId, 'Ads', [
-                'Ad Name', 'Campaign Name', 'Impressions', 'Clicks', 'Spend', 'CTR', 'CPC', 'Conversions', 'Date'
+                'Date', 'ISO Week', 'Month', 'Year', 'Ad Name', 'Ad Set Name', 'Campaign Name',
+                'Campaign Objective', 'Buying Type', 'Bid Strategy', 'Amount Spent', 'Reach', 'Impressions',
+                'Clicks (all)', 'Link Clicks', 'Landing Page views', 'View Content', 'View Content Value',
+                'Add To Wishlist', 'Add To Wishlist Value', 'Add To Cart', 'Add To Cart Value',
+                'Initiated Checkout', 'Initiated Checkout Value', 'Adds Payment Info', 'Add Payment Info Value',
+                'Purchase', 'Purchase Value', 'Leads', 'Lead Value', 'Contact', 'Contact Value'
             ], data.ads, 'ad');
         }
 
         if (Array.isArray(data.campaigns) && data.campaigns.length > 0) {
             await ensureSeparateSheet(sheetId, 'Campaigns', [
-                'Campaign Name', 'Status', 'Impressions', 'Clicks', 'Spend', 'CTR', 'CPC', 'Conversions', 'Date'
+                'Date', 'ISO Week', 'Month', 'Year', 'Campaign Name', 'Campaign Objective',
+                'Buying Type', 'Bid Strategy', 'Amount Spent', 'Reach', 'Impressions',
+                'Clicks (all)', 'Link Clicks', 'Landing Page views'
             ], data.campaigns, 'campaign');
         }
 
         // Calculate and add performance metrics sheet for better visualization
-        await calculatePerformanceMetrics(sheetId, consolidatedData);
+        await calculatePerformanceMetrics(sheetId, consolidatedData, adHeaders);
 
         return NextResponse.json({
             success: true,
@@ -196,133 +220,49 @@ export async function POST(request: NextRequest) {
     }
 }
 
-// NEW: GET endpoint to generate Looker Studio link
+// GET endpoint to generate Looker Studio link
 export async function GET() {
     try {
+        // Ensure the spreadsheet ID is available
         const spreadsheetId = process.env.GOOGLE_SHEETS_ID;
         if (!spreadsheetId) {
             throw new Error('Missing GOOGLE_SHEETS_ID in environment');
         }
 
-        // Fetch spreadsheet metadata without grid data
+        // Fetch spreadsheet metadata to get the sheet ID
         const response = await sheets.spreadsheets.get({ spreadsheetId, includeGridData: false });
         const sheetsMeta = response.data.sheets;
         if (!sheetsMeta || sheetsMeta.length === 0) {
             throw new Error('Spreadsheet contains no sheets');
         }
 
-        // Get all available sheet IDs and names for reporting
-        const availableSheets = sheetsMeta.map(sheet => ({
-            title: sheet.properties?.title,
-            id: sheet.properties?.sheetId
-        })).filter(sheet => sheet.title && sheet.id !== undefined);
-
-        // Find the main MarketingAPI sheet for primary data source
-        const marketingApiSheet = availableSheets.find(s => s.title === 'MarketingAPI');
-        const performanceSheet = availableSheets.find(s => s.title === 'PerformanceMetrics');
-        
+        // Find the specific sheet (e.g., 'MarketingAPI')
+        const marketingApiSheet = sheetsMeta.find(s => s.properties?.title === 'MarketingAPI');
         if (!marketingApiSheet) {
             throw new Error('MarketingAPI sheet not found in spreadsheet');
         }
-        
-        // Build Looker Studio Linking API URL with advanced configuration
-        const url = new URL('https://lookerstudio.google.com/reporting/create');
-        
-        // Configure primary data source
-        url.searchParams.set('ds.connector', 'googleSheets');
-        url.searchParams.set('ds.spreadsheetId', spreadsheetId);
-        url.searchParams.set('ds.worksheetId', marketingApiSheet.id!.toString());
-        url.searchParams.set('ds.refreshFields', 'true');
-        url.searchParams.set('ds.dataSourceId', 'marketingData');
-        url.searchParams.set('r.reportName', 'Marketing Performance Dashboard');
-        
-        // Add second data source if performance metrics sheet exists
-        if (performanceSheet) {
-            url.searchParams.set('ds2.connector', 'googleSheets');
-            url.searchParams.set('ds2.spreadsheetId', spreadsheetId);
-            url.searchParams.set('ds2.worksheetId', performanceSheet.id!.toString());
-            url.searchParams.set('ds2.refreshFields', 'true');
-            url.searchParams.set('ds2.dataSourceId', 'performanceMetrics');
-        }
-        
-        // Add template configuration parameters for better initial setup
-        const reportConfig = {
-            "reportType": "DASHBOARD",
-            "style": "MODERN",
-            "components": [
-                {
-                    "type": "SCORECARD",
-                    "title": "Performance Overview",
-                    "position": { "x": 0, "y": 0, "width": 4, "height": 2 },
-                    "metrics": [
-                        { "field": "SUM(Impressions)", "name": "Total Impressions" },
-                        { "field": "SUM(Clicks)", "name": "Total Clicks" },
-                        { "field": "SUM(Spend)", "name": "Total Spend" },
-                        { "field": "SUM(Conversions)", "name": "Total Conversions" }
-                    ]
-                },
-                {
-                    "type": "TIME_SERIES",
-                    "title": "Performance Trends",
-                    "position": { "x": 0, "y": 2, "width": 12, "height": 4 },
-                    "dimensions": ["Date"],
-                    "metrics": ["SUM(Impressions)", "SUM(Clicks)", "SUM(Conversions)"]
-                },
-                {
-                    "type": "TABLE",
-                    "title": "Campaign Performance",
-                    "position": { "x": 0, "y": 6, "width": 12, "height": 4 },
-                    "dimensions": ["Type", "Name", "Campaign"],
-                    "metrics": ["SUM(Impressions)", "SUM(Clicks)", "SUM(Spend)", "AVG(CTR)", "AVG(CPC)", "SUM(Conversions)"]
-                },
-                {
-                    "type": "PIE_CHART",
-                    "title": "Spend Distribution by Type",
-                    "position": { "x": 4, "y": 0, "width": 4, "height": 2 },
-                    "dimensions": ["Type"],
-                    "metrics": ["SUM(Spend)"]
-                },
-                {
-                    "type": "BAR_CHART",
-                    "title": "Top Campaigns by Spend",
-                    "position": { "x": 8, "y": 0, "width": 4, "height": 2 },
-                    "dimensions": ["Name"],
-                    "metrics": ["SUM(Spend)"],
-                    "sort": { "field": "SUM(Spend)", "direction": "DESC" },
-                    "limit": 5
-                }
-            ],
-            "filters": [
-                { "field": "Date", "name": "Date Range" },
-                { "field": "Type", "name": "Ad Type" }
-            ],
-            "fields": [
-                {"id": "Type", "name": "Type", "type": "TEXT"},
-                {"id": "Name", "name": "Name", "type": "TEXT"},
-                {"id": "Campaign", "name": "Campaign", "type": "TEXT"},
-                {"id": "Impressions", "name": "Impressions", "type": "NUMBER"},
-                {"id": "Clicks", "name": "Clicks", "type": "NUMBER"},
-                {"id": "Spend", "name": "Spend", "type": "CURRENCY"},
-                {"id": "CTR", "name": "CTR", "type": "PERCENT"},
-                {"id": "CPC", "name": "CPC", "type": "CURRENCY"},
-                {"id": "Conversions", "name": "Conversions", "type": "NUMBER"},
-                {"id": "Date", "name": "Date", "type": "DATE"},
-                {"id": "Week", "name": "Week", "type": "NUMBER"},
-                {"id": "Month", "name": "Month", "type": "NUMBER"},
-                {"id": "Quarter", "name": "Quarter", "type": "NUMBER"},
-                {"id": "Year", "name": "Year", "type": "NUMBER"}
-            ]
-        };
-        
-        url.searchParams.set('c.reportConfig', encodeURIComponent(JSON.stringify(reportConfig)));
 
+        const sheetId = marketingApiSheet.properties?.sheetId;
+        if (!sheetId) {
+            throw new Error('Sheet ID not found for MarketingAPI');
+        }
+
+        // Create a simple Looker Studio URL with the data source connected
+        const url = new URL('https://lookerstudio.google.com/reporting/create');
+        url.searchParams.set('ds.connector', 'googleSheets'); // Specify Google Sheets as the connector
+        url.searchParams.set('ds.spreadsheetId', spreadsheetId); // Your Google Sheet ID
+        url.searchParams.set('ds.worksheetId', sheetId.toString()); // The specific sheet ID
+        url.searchParams.set('ds.refreshFields', 'true'); // Ensure fields are refreshed
+        url.searchParams.set('ds.dataSourceId', 'marketingData'); // A unique ID for the data source
+        url.searchParams.set('r.reportName', 'Marketing Performance Dashboard'); // Default report name
+
+        // Return the URL for redirection
         return NextResponse.json({ 
             success: true, 
-            url: url.toString(),
-            availableSheets: availableSheets
+            url: url.toString()
         });
     } catch (err: any) {
-        console.error('Looker Studio export error:', err);
+        console.error('Looker Studio redirect error:', err);
         return NextResponse.json({ error: err.message }, { status: 500 });
     }
 }
@@ -379,28 +319,56 @@ async function ensureSeparateSheet(
     const rows = items.map(item => {
         if (dataType === 'ad') {
             return [
-                item.ad_name || item.name || '',
-                item.campaign_name || '',
-                parseInt(item.impressions, 10) || 0,
-                parseInt(item.clicks, 10) || 0,
-                parseFloat(item.spend) || 0,
-                parseFloat(item.ctr) || 0,
-                parseFloat(item.cpc) || 0,
-                parseInt(item.conversions, 10) || 0,
-                item.date || new Date().toISOString().split('T')[0]
+                item.Date || new Date().toISOString().split('T')[0],
+                item["ISO Week"] || '',
+                item.Month || '',
+                item.Year || new Date().getFullYear(),
+                item["Ad Name"] || '',
+                item["Ad Set Name"] || '',
+                item["Campaing Name"] || '',
+                item["Campaing Objective"] || '',
+                item["Buying Type"] || '',
+                item["Bid Strategy"] || '',
+                parseFloat(String(item["Amount Spent"])) || 0,
+                parseInt(String(item.Reach), 10) || 0,
+                parseInt(String(item.Impressions), 10) || 0,
+                parseInt(String(item["Clicks (all)"]), 10) || 0,
+                parseInt(String(item["Link Clicks"]), 10) || 0,
+                parseInt(String(item["Landing Page views"]), 10) || 0,
+                parseInt(String(item["View Content"]), 10) || 0,
+                parseFloat(String(item["View Content Conversion Value"])) || 0,
+                parseInt(String(item["Add To Wishlist"]), 10) || 0,
+                parseFloat(String(item["Add To Wishlist Conversion Value"])) || 0,
+                parseInt(String(item["Add To Cart"]), 10) || 0,
+                parseFloat(String(item["Add To Cart Conversion Value"])) || 0,
+                parseInt(String(item["Initiated Checkout"]), 10) || 0,
+                parseFloat(String(item["Initiated Checkout Conversion Value"])) || 0,
+                parseInt(String(item["Adds Payment Info"]), 10) || 0,
+                parseFloat(String(item["Add Payment Info Conversion Value"])) || 0,
+                parseInt(String(item.Purchase), 10) || 0,
+                parseFloat(String(item["Purchase Conversion Value"])) || 0,
+                parseInt(String(item.Leads), 10) || 0,
+                parseFloat(String(item["Lead Conversion Value"])) || 0,
+                parseInt(String(item.Contact), 10) || 0,
+                parseFloat(String(item["Contact Conversion Value"])) || 0
             ];
         } else {
             // Campaign data
             return [
-                item.name || item.campaign_name || '',
-                item.status || 'Active',
-                parseInt(item.impressions, 10) || 0,
-                parseInt(item.clicks, 10) || 0,
-                parseFloat(item.spend) || 0,
-                parseFloat(item.ctr) || 0,
-                parseFloat(item.cpc) || 0,
-                parseInt(item.conversions, 10) || 0,
-                item.date || new Date().toISOString().split('T')[0]
+                item.Date || new Date().toISOString().split('T')[0],
+                item["ISO Week"] || '',
+                item.Month || '',
+                item.Year || new Date().getFullYear(),
+                item["Campaing Name"] || '',
+                item["Campaing Objective"] || '',
+                item["Buying Type"] || '',
+                item["Bid Strategy"] || '',
+                parseFloat(String(item["Amount Spent"])) || 0,
+                parseInt(String(item.Reach), 10) || 0,
+                parseInt(String(item.Impressions), 10) || 0,
+                parseInt(String(item["Clicks (all)"]), 10) || 0,
+                parseInt(String(item["Link Clicks"]), 10) || 0,
+                parseInt(String(item["Landing Page views"]), 10) || 0
             ];
         }
     });
@@ -416,8 +384,12 @@ async function ensureSeparateSheet(
     }
 }
 
-// NEW: Helper function to calculate performance metrics and save to a dedicated sheet
-async function calculatePerformanceMetrics(spreadsheetId: string, data: any[]): Promise<void> {
+// Helper function to calculate performance metrics and save to a dedicated sheet
+async function calculatePerformanceMetrics(
+    spreadsheetId: string, 
+    data: any[],
+    headers: string[]
+): Promise<void> {
     // First ensure the PerformanceMetrics sheet exists
     try {
         await sheets.spreadsheets.values.get({
@@ -444,7 +416,8 @@ async function calculatePerformanceMetrics(spreadsheetId: string, data: any[]): 
 
     // Define headers for performance metrics
     const metricsHeaders = [
-        'Date', 'Type', 'ROI', 'CPA', 'ConversionRate', 'DailyBudget', 'SpendEfficiency', 'WeekDay'
+        'Date', 'Type', 'Campaign', 'ROAS', 'CPA', 'CTR', 'ConversionRate', 
+        'CPM', 'CPC', 'AddToCartRate', 'CheckoutRate', 'PurchaseRate', 'WeekDay'
     ];
 
     // Clear existing data
@@ -465,55 +438,93 @@ async function calculatePerformanceMetrics(spreadsheetId: string, data: any[]): 
 
     // Calculate advanced metrics
     if (data.length > 0) {
-        // Group by date and type for aggregated metrics
-        const dateTypeMap = new Map();
+        // Find indexes for important fields
+        const typeIndex = headers.indexOf('Type');
+        const dateIndex = headers.indexOf('Date');
+        const campaignIndex = headers.indexOf('Campaign Name');
+        const impressionsIndex = headers.indexOf('Impressions');
+        const clicksIndex = headers.indexOf('Link Clicks');
+        const spendIndex = headers.indexOf('Amount Spent');
+        const purchaseIndex = headers.indexOf('Purchase');
+        const purchaseValueIndex = headers.indexOf('Purchase Value');
+        const addToCartIndex = headers.indexOf('Add To Cart');
+        const checkoutIndex = headers.indexOf('Initiated Checkout');
+
+        // Group by date, type, and campaign for aggregated metrics
+        const metricMap = new Map();
         
         data.forEach(row => {
-            const date = row[9]; // Date is at index 9
-            const type = row[0]; // Type is at index 0
-            const key = `${date}_${type}`;
+            const date = row[dateIndex];
+            const type = row[typeIndex];
+            const campaign = row[campaignIndex] || '';
+            const key = `${date}_${type}_${campaign}`;
             
-            const spend = parseFloat(row[5]) || 0; // Spend
-            const conversions = parseInt(row[8]) || 0; // Conversions
-            const clicks = parseInt(row[4]) || 0; // Clicks
-            
-            if (!dateTypeMap.has(key)) {
-                dateTypeMap.set(key, {
+            if (!metricMap.has(key)) {
+                metricMap.set(key, {
                     date,
                     type,
+                    campaign,
                     spend: 0,
-                    conversions: 0,
-                    clicks: 0
+                    impressions: 0,
+                    clicks: 0,
+                    purchases: 0,
+                    purchaseValue: 0,
+                    addToCart: 0,
+                    checkout: 0
                 });
             }
             
-            const entry = dateTypeMap.get(key);
-            entry.spend += spend;
-            entry.conversions += conversions;
-            entry.clicks += clicks;
+            const entry = metricMap.get(key);
+            entry.spend += parseFloat(String(row[spendIndex])) || 0;
+            entry.impressions += parseInt(String(row[impressionsIndex]), 10) || 0;
+            entry.clicks += parseInt(String(row[clicksIndex]), 10) || 0;
+            
+            if (purchaseIndex >= 0) {
+                entry.purchases += parseInt(String(row[purchaseIndex]), 10) || 0;
+            }
+            
+            if (purchaseValueIndex >= 0) {
+                entry.purchaseValue += parseFloat(String(row[purchaseValueIndex])) || 0;
+            }
+            
+            if (addToCartIndex >= 0) {
+                entry.addToCart += parseInt(String(row[addToCartIndex]), 10) || 0;
+            }
+            
+            if (checkoutIndex >= 0) {
+                entry.checkout += parseInt(String(row[checkoutIndex]), 10) || 0;
+            }
         });
         
         // Calculate performance metrics
-        const performanceRows = Array.from(dateTypeMap.values()).map(entry => {
-            const { date, type, spend, conversions, clicks } = entry;
-            const dateObj = new Date(date);
+        const performanceRows = Array.from(metricMap.values()).map(entry => {
+            const dateObj = new Date(entry.date);
             
             // Calculate metrics
-            const roi = conversions > 0 ? (conversions * 100 - spend) / spend : 0; // Assuming $100 value per conversion
-            const cpa = conversions > 0 ? spend / conversions : 0;
-            const conversionRate = clicks > 0 ? (conversions / clicks) * 100 : 0;
-            const dailyBudget = spend; // Simplistic, in real scenario might be target/actual
-            const spendEfficiency = dailyBudget > 0 ? spend / dailyBudget : 0;
+            const roas = entry.spend > 0 ? entry.purchaseValue / entry.spend : 0;
+            const cpa = entry.purchases > 0 ? entry.spend / entry.purchases : 0;
+            const ctr = entry.impressions > 0 ? (entry.clicks / entry.impressions) * 100 : 0;
+            const conversionRate = entry.clicks > 0 ? (entry.purchases / entry.clicks) * 100 : 0;
+            const cpm = entry.impressions > 0 ? (entry.spend / entry.impressions) * 1000 : 0;
+            const cpc = entry.clicks > 0 ? entry.spend / entry.clicks : 0;
+            const addToCartRate = entry.clicks > 0 ? (entry.addToCart / entry.clicks) * 100 : 0;
+            const checkoutRate = entry.addToCart > 0 ? (entry.checkout / entry.addToCart) * 100 : 0;
+            const purchaseRate = entry.checkout > 0 ? (entry.purchases / entry.checkout) * 100 : 0;
             const weekDay = dateObj.toLocaleDateString('en-US', { weekday: 'short' });
             
             return [
-                date,
-                type,
-                roi.toFixed(2),
+                entry.date,
+                entry.type,
+                entry.campaign,
+                roas.toFixed(2),
                 cpa.toFixed(2),
+                ctr.toFixed(2),
                 conversionRate.toFixed(2),
-                dailyBudget.toFixed(2),
-                spendEfficiency.toFixed(2),
+                cpm.toFixed(2),
+                cpc.toFixed(2),
+                addToCartRate.toFixed(2),
+                checkoutRate.toFixed(2),
+                purchaseRate.toFixed(2),
                 weekDay
             ];
         });
@@ -528,11 +539,4 @@ async function calculatePerformanceMetrics(spreadsheetId: string, data: any[]): 
             });
         }
     }
-}
-
-// Helper function to get week number from date
-function getWeekNumber(date: Date): number {
-    const firstDayOfYear = new Date(date.getFullYear(), 0, 1);
-    const pastDaysOfYear = (date.getTime() - firstDayOfYear.getTime()) / 86400000;
-    return Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7);
 }
