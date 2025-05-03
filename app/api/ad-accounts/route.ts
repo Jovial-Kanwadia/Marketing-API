@@ -1,6 +1,6 @@
 import { getServerSession } from "next-auth/next"
 import { NextResponse } from "next/server"
-import { authOptions } from "@/app/api/auth/[...nextauth]/route" // Adjust this path to your auth options file
+import { authOptions } from "@/app/api/auth/options" // Updated path
 
 // Define the extended session type that includes accessToken
 interface ExtendedSession {

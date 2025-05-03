@@ -1,6 +1,6 @@
 // File: /app/api/ads/route.ts
 import { getServerSession } from "next-auth/next"
-import { authOptions } from "@/app/api/auth/[...nextauth]/route"
+import { authOptions } from "@/app/api/auth/options"
 import fetch from 'node-fetch';
 
 // Interface for the session, extended to include accessToken
