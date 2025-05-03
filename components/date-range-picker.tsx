@@ -11,7 +11,9 @@ import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 
 interface DatePickerWithRangeProps {
-    className?: string
+    className?: string;
+    onChange?: (range: { from: Date; to: Date }) => void;
+    value?: { from: Date; to: Date };
 }
 
 export function DatePickerWithRange({ className }: DatePickerWithRangeProps) {
