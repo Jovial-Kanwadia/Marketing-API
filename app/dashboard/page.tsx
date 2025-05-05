@@ -132,39 +132,39 @@ export default function DashboardPage() {
                         <CardTitle>Filters</CardTitle>
                         <CardDescription>Select an ad account and date range to view performance data</CardDescription>
                     </CardHeader>
-                    <CardContent className="flex flex-col gap-4 sm:flex-row">
-                        <AdAccountSelector onSelectAccount={setSelectedAccount} className="w-full sm:w-1/3" />
+                    <CardContent className="flex flex-col gap-4 md:flex-row">
+                        <AdAccountSelector onSelectAccount={setSelectedAccount} className="w-full md:w-1/3" />
                         <DatePickerWithRange
-                            className="w-full sm:w-2/3"
+                            className="w-full md:w-2/3"
                             onChange={handleDateRangeChange}
                             value={dateRange}
                         />
                     </CardContent>
                 </Card>
 
-                <Tabs defaultValue="campaigns">
-                    <TabsList>
-                        <TabsTrigger value="campaigns">Campaigns</TabsTrigger>
-                        <TabsTrigger value="ads">Ads</TabsTrigger>
+                <Tabs defaultValue="campaigns" className="w-full overflow-hidden">
+                    <TabsList className="w-full flex justify-start mb-2">
+                        <TabsTrigger value="campaigns" className="flex-1 max-w-[200px]">Campaigns</TabsTrigger>
+                        <TabsTrigger value="ads" className="flex-1 max-w-[200px]">Ads</TabsTrigger>
                     </TabsList>
-                    <TabsContent value="campaigns">
-                        <Card>
+                    <TabsContent value="campaigns" className="w-full">
+                        <Card className="w-full">
                             <CardHeader>
                                 <CardTitle>Campaign Performance</CardTitle>
                                 <CardDescription>Overview of your campaign performance metrics</CardDescription>
                             </CardHeader>
-                            <CardContent>
+                            <CardContent className="p-0 sm:p-2 md:p-6">
                                 <CampaignPerformanceTable data={campaignData} isLoading={isLoading} />
                             </CardContent>
                         </Card>
                     </TabsContent>
-                    <TabsContent value="ads">
-                        <Card>
+                    <TabsContent value="ads" className="w-full">
+                        <Card className="w-full">
                             <CardHeader>
                                 <CardTitle>Ad Performance</CardTitle>
                                 <CardDescription>Detailed performance metrics for individual ads</CardDescription>
                             </CardHeader>
-                            <CardContent>
+                            <CardContent className="p-0 sm:p-2 md:p-6">
                                 <AdPerformanceTable data={adData} isLoading={isLoading} />
                             </CardContent>
                         </Card>

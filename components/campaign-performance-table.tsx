@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
     ColumnDef,
     ColumnFiltersState,
@@ -35,8 +35,60 @@ import { CampaignPerformanceData } from "@/app/dashboard/page"
 export function CampaignPerformanceTable({ data, isLoading }: { data: CampaignPerformanceData[], isLoading: boolean }) {
     const [sorting, setSorting] = useState<SortingState>([])
     const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
-    const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
+    const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
+        // Hide less important columns on mobile by default
+        "ISO Week": false,
+        "Month": false,
+        "Year": false,
+        "Buying Type": false,
+        "Bid Strategy": false
+    })
     const [rowSelection, setRowSelection] = useState({})
+
+    // Set up responsive column visibility
+    useEffect(() => {
+        const handleResize = () => {
+            if (window.innerWidth < 640) { // sm breakpoint - very minimal columns for mobile
+                setColumnVisibility({
+                    "select": true,
+                    "Date": true,
+                    "Campaing Name": true,
+                    "Amount Spent": true,
+                    "Purchase": true,
+                    "Purchase Conversion Value": true,
+                })
+            } else if (window.innerWidth < 768) { // md breakpoint - few more columns
+                setColumnVisibility({
+                    "select": true,
+                    "Date": true,
+                    "Campaing Name": true,
+                    "Campaing Objective": true,
+                    "Amount Spent": true,
+                    "Reach": true,
+                    "Impressions": true,
+                    "Clicks (all)": true,
+                })
+            } else if (window.innerWidth < 1024) { // lg breakpoint - medium set of columns
+                setColumnVisibility({
+                    "ISO Week": false,
+                    "Month": false,
+                    "Year": false,
+                    "Buying Type": false,
+                    "Bid Strategy": false,
+                })
+            } else { // xl breakpoint - show most columns
+                setColumnVisibility({
+                    "ISO Week": false,
+                    "Month": false,
+                    "Year": false,
+                })
+            }
+        }
+
+        handleResize()
+        window.addEventListener('resize', handleResize)
+        return () => window.removeEventListener('resize', handleResize)
+    }, [])
 
     const columns: ColumnDef<CampaignPerformanceData>[] = [
         {
@@ -235,22 +287,22 @@ export function CampaignPerformanceTable({ data, isLoading }: { data: CampaignPe
 
     return (
         <div className="w-full">
-            <div className="flex items-center py-4">
+            <div className="flex flex-col sm:flex-row items-center py-4 gap-2">
                 <Input
                     placeholder="Filter by campaign name..."
                     value={(table.getColumn("Campaing Name")?.getFilterValue() as string) ?? ""}
                     onChange={(event) =>
                         table.getColumn("Campaing Name")?.setFilterValue(event.target.value)
                     }
-                    className="max-w-sm"
+                    className="w-full sm:max-w-sm"
                 />
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <Button variant="outline" className="ml-auto">
+                        <Button variant="outline" className="w-full sm:w-auto sm:ml-auto">
                             Columns <ChevronDown className="ml-2 h-4 w-4" />
                         </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
+                    <DropdownMenuContent align="end" className="max-h-[300px] overflow-y-auto">
                         {table
                             .getAllColumns()
                             .filter((column) => column.getCanHide())
@@ -271,56 +323,58 @@ export function CampaignPerformanceTable({ data, isLoading }: { data: CampaignPe
                     </DropdownMenuContent>
                 </DropdownMenu>
             </div>
-            <div className="rounded-md border">
-                <Table>
-                    <TableHeader>
-                        {table.getHeaderGroups().map((headerGroup) => (
-                            <TableRow key={headerGroup.id}>
-                                {headerGroup.headers.map((header) => {
-                                    return (
-                                        <TableHead key={header.id}>
-                                            {header.isPlaceholder
-                                                ? null
-                                                : flexRender(
-                                                    header.column.columnDef.header,
-                                                    header.getContext()
-                                                )}
-                                        </TableHead>
-                                    )
-                                })}
-                            </TableRow>
-                        ))}
-                    </TableHeader>
-                    <TableBody>
-                        {table.getRowModel().rows?.length ? (
-                            table.getRowModel().rows.map((row) => (
-                                <TableRow
-                                    key={row.id}
-                                    data-state={row.getIsSelected() && "selected"}
-                                >
-                                    {row.getVisibleCells().map((cell) => (
-                                        <TableCell key={cell.id}>
-                                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                                        </TableCell>
-                                    ))}
+            <div className="rounded-md border overflow-hidden">
+                <div className="max-w-full overflow-x-auto">
+                    <Table>
+                        <TableHeader>
+                            {table.getHeaderGroups().map((headerGroup) => (
+                                <TableRow key={headerGroup.id}>
+                                    {headerGroup.headers.map((header) => {
+                                        return (
+                                            <TableHead key={header.id}>
+                                                {header.isPlaceholder
+                                                    ? null
+                                                    : flexRender(
+                                                        header.column.columnDef.header,
+                                                        header.getContext()
+                                                    )}
+                                            </TableHead>
+                                        )
+                                    })}
                                 </TableRow>
-                            ))
-                        ) : (
-                            <TableRow>
-                                <TableCell colSpan={columns.length} className="h-24 text-center">
-                                    No results.
-                                </TableCell>
-                            </TableRow>
-                        )}
-                    </TableBody>
-                </Table>
+                            ))}
+                        </TableHeader>
+                        <TableBody>
+                            {table.getRowModel().rows?.length ? (
+                                table.getRowModel().rows.map((row) => (
+                                    <TableRow
+                                        key={row.id}
+                                        data-state={row.getIsSelected() && "selected"}
+                                    >
+                                        {row.getVisibleCells().map((cell) => (
+                                            <TableCell key={cell.id}>
+                                                {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                            </TableCell>
+                                        ))}
+                                    </TableRow>
+                                ))
+                            ) : (
+                                <TableRow>
+                                    <TableCell colSpan={columns.length} className="h-24 text-center">
+                                        No results.
+                                    </TableCell>
+                                </TableRow>
+                            )}
+                        </TableBody>
+                    </Table>
+                </div>
             </div>
-            <div className="flex items-center justify-end space-x-2 py-4">
-                <div className="flex-1 text-sm text-muted-foreground">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-2 py-4">
+                <div className="text-sm text-muted-foreground order-2 sm:order-1">
                     {table.getFilteredSelectedRowModel().rows.length} of{" "}
                     {table.getFilteredRowModel().rows.length} row(s) selected.
                 </div>
-                <div className="space-x-2">
+                <div className="flex space-x-2 order-1 sm:order-2 w-full sm:w-auto justify-center sm:justify-end">
                     <Button
                         variant="outline"
                         size="sm"

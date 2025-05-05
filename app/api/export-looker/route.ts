@@ -247,8 +247,10 @@ export async function GET() {
             throw new Error('Sheet ID not found for MarketingAPI');
         }
 
-        // Create a simple Looker Studio URL with the data source connected
-        const url = new URL('https://lookerstudio.google.com/reporting/create');
+        // Create a Looker Studio URL that redirects to the reporting page
+        const url = new URL('https://lookerstudio.google.com/navigation/reporting');
+
+        // Add parameters for data source connection
         url.searchParams.set('ds.connector', 'googleSheets'); // Specify Google Sheets as the connector
         url.searchParams.set('ds.spreadsheetId', spreadsheetId); // Your Google Sheet ID
         url.searchParams.set('ds.worksheetId', sheetId.toString()); // The specific sheet ID
@@ -257,8 +259,8 @@ export async function GET() {
         url.searchParams.set('r.reportName', 'Marketing Performance Dashboard'); // Default report name
 
         // Return the URL for redirection
-        return NextResponse.json({ 
-            success: true, 
+        return NextResponse.json({
+            success: true,
             url: url.toString()
         });
     } catch (err: any) {
@@ -386,7 +388,7 @@ async function ensureSeparateSheet(
 
 // Helper function to calculate performance metrics and save to a dedicated sheet
 async function calculatePerformanceMetrics(
-    spreadsheetId: string, 
+    spreadsheetId: string,
     data: any[],
     headers: string[]
 ): Promise<void> {
@@ -416,7 +418,7 @@ async function calculatePerformanceMetrics(
 
     // Define headers for performance metrics
     const metricsHeaders = [
-        'Date', 'Type', 'Campaign', 'ROAS', 'CPA', 'CTR', 'ConversionRate', 
+        'Date', 'Type', 'Campaign', 'ROAS', 'CPA', 'CTR', 'ConversionRate',
         'CPM', 'CPC', 'AddToCartRate', 'CheckoutRate', 'PurchaseRate', 'WeekDay'
     ];
 
@@ -452,13 +454,13 @@ async function calculatePerformanceMetrics(
 
         // Group by date, type, and campaign for aggregated metrics
         const metricMap = new Map();
-        
+
         data.forEach(row => {
             const date = row[dateIndex];
             const type = row[typeIndex];
             const campaign = row[campaignIndex] || '';
             const key = `${date}_${type}_${campaign}`;
-            
+
             if (!metricMap.has(key)) {
                 metricMap.set(key, {
                     date,
@@ -473,33 +475,33 @@ async function calculatePerformanceMetrics(
                     checkout: 0
                 });
             }
-            
+
             const entry = metricMap.get(key);
             entry.spend += parseFloat(String(row[spendIndex])) || 0;
             entry.impressions += parseInt(String(row[impressionsIndex]), 10) || 0;
             entry.clicks += parseInt(String(row[clicksIndex]), 10) || 0;
-            
+
             if (purchaseIndex >= 0) {
                 entry.purchases += parseInt(String(row[purchaseIndex]), 10) || 0;
             }
-            
+
             if (purchaseValueIndex >= 0) {
                 entry.purchaseValue += parseFloat(String(row[purchaseValueIndex])) || 0;
             }
-            
+
             if (addToCartIndex >= 0) {
                 entry.addToCart += parseInt(String(row[addToCartIndex]), 10) || 0;
             }
-            
+
             if (checkoutIndex >= 0) {
                 entry.checkout += parseInt(String(row[checkoutIndex]), 10) || 0;
             }
         });
-        
+
         // Calculate performance metrics
         const performanceRows = Array.from(metricMap.values()).map(entry => {
             const dateObj = new Date(entry.date);
-            
+
             // Calculate metrics
             const roas = entry.spend > 0 ? entry.purchaseValue / entry.spend : 0;
             const cpa = entry.purchases > 0 ? entry.spend / entry.purchases : 0;
@@ -511,7 +513,7 @@ async function calculatePerformanceMetrics(
             const checkoutRate = entry.addToCart > 0 ? (entry.checkout / entry.addToCart) * 100 : 0;
             const purchaseRate = entry.checkout > 0 ? (entry.purchases / entry.checkout) * 100 : 0;
             const weekDay = dateObj.toLocaleDateString('en-US', { weekday: 'short' });
-            
+
             return [
                 entry.date,
                 entry.type,
@@ -528,7 +530,7 @@ async function calculatePerformanceMetrics(
                 weekDay
             ];
         });
-        
+
         // Add performance metrics data
         if (performanceRows.length > 0) {
             await sheets.spreadsheets.values.append({

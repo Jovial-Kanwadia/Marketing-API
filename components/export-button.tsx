@@ -3,6 +3,7 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Download } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { ExportSuccessModal } from "@/components/export-success-modal"
 
 // This component needs access to the ad data
 interface ExportButtonProps {
@@ -12,6 +13,9 @@ interface ExportButtonProps {
 
 export function ExportButton({ adData = [], campaignData = [] }: ExportButtonProps) {
     const [isExporting, setIsExporting] = useState(false)
+    const [showSuccessModal, setShowSuccessModal] = useState(false)
+    const [exportType, setExportType] = useState<string>("")
+    const [exportUrl, setExportUrl] = useState<string>("")
 
     const handleExport = async (format: string) => {
         setIsExporting(true)
@@ -59,7 +63,9 @@ export function ExportButton({ adData = [], campaignData = [] }: ExportButtonPro
                 window.URL.revokeObjectURL(url);
                 a.remove();
 
-                alert(`Your data has been exported as ${format.toUpperCase()}.`);
+                // Show success modal
+                setExportType(format);
+                setShowSuccessModal(true);
             }
             // For Looker Studio export
             else if (format === "looker") {
@@ -76,9 +82,10 @@ export function ExportButton({ adData = [], campaignData = [] }: ExportButtonPro
                 console.log("Received Looker Studio response:", data);
 
                 if (data.url) {
-                    // Open Looker Studio in a new tab
-                    window.open(data.url, "_blank");
-                    alert("Looker Studio opened. Create your report by following the instructions.");
+                    // Store the URL for the modal
+                    setExportUrl(data.url);
+                    setExportType("looker");
+                    setShowSuccessModal(true);
                 } else {
                     throw new Error("No Looker Studio URL returned from server");
                 }
@@ -95,33 +102,43 @@ export function ExportButton({ adData = [], campaignData = [] }: ExportButtonPro
     const hasData = adData.length > 0 || campaignData.length > 0;
 
     return (
-        <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-                <Button className="gap-2" disabled={isExporting || !hasData}>
-                    <Download className="h-4 w-4" />
-                    {isExporting ? "Exporting..." : "Export"}
-                </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-                <DropdownMenuItem
-                    onClick={() => handleExport("csv")}
-                    disabled={!hasData}
-                >
-                    Export as CSV
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                    onClick={() => handleExport("excel")}
-                    disabled={!hasData}
-                >
-                    Export as Excel
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                    onClick={() => handleExport("looker")}
-                    disabled={!hasData}
-                >
-                    Export to Looker Studio
-                </DropdownMenuItem>
-            </DropdownMenuContent>
-        </DropdownMenu>
+        <>
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button className="gap-2 w-full sm:w-auto" disabled={isExporting || !hasData}>
+                        <Download className="h-4 w-4" />
+                        {isExporting ? "Exporting..." : "Export"}
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                    <DropdownMenuItem
+                        onClick={() => handleExport("csv")}
+                        disabled={!hasData}
+                    >
+                        Export as CSV
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                        onClick={() => handleExport("excel")}
+                        disabled={!hasData}
+                    >
+                        Export as Excel
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                        onClick={() => handleExport("looker")}
+                        disabled={!hasData}
+                    >
+                        Export to Looker Studio
+                    </DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Success Modal */}
+            <ExportSuccessModal
+                isOpen={showSuccessModal}
+                onClose={() => setShowSuccessModal(false)}
+                exportType={exportType}
+                exportUrl={exportUrl}
+            />
+        </>
     )
 }
