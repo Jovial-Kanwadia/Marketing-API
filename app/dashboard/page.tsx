@@ -5,7 +5,6 @@ import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { DatePickerWithRange } from "@/components/date-range-picker"
 import { AdAccountSelector } from "@/components/ad-account-selector"
 import { AdPerformanceTable } from "@/components/ad-performance-table"
 import { CampaignPerformanceTable } from "@/components/campaign-performance-table"
@@ -71,7 +70,6 @@ export default function DashboardPage() {
     const { data: session, status } = useSession()
     const router = useRouter()
     const [selectedAccount, setSelectedAccount] = useState("")
-    const [dateRange, setDateRange] = useState({ from: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), to: new Date() })
     const [isLoading, setIsLoading] = useState(true)
     const [adData, setAdData] = useState<AdPerformanceData[]>([])
     const [campaignData, setCampaignData] = useState<CampaignPerformanceData[]>([])
@@ -80,18 +78,12 @@ export default function DashboardPage() {
         if (status === "authenticated" && selectedAccount) {
             fetchAdData(selectedAccount)
         }
-    }, [status, selectedAccount, dateRange])
+    }, [status, selectedAccount])
 
     const fetchAdData = async (accountId: string) => {
         setIsLoading(true)
         try {
-            // Include date range in the API call
-            const fromDate = dateRange.from.toISOString().split('T')[0]
-            const toDate = dateRange.to.toISOString().split('T')[0]
-
-            const response = await fetch(
-                `/api/ads?accountId=${accountId}&from=${fromDate}&to=${toDate}`
-            )
+            const response = await fetch(`/api/ads?accountId=${accountId}`)
             const data = await response.json()
             setAdData(data.ads || [])
             setCampaignData(data.campaigns || [])
@@ -100,10 +92,6 @@ export default function DashboardPage() {
         } finally {
             setIsLoading(false)
         }
-    }
-
-    const handleDateRangeChange = (range: { from: Date; to: Date }) => {
-        setDateRange(range)
     }
 
     if (status === "loading") {
@@ -129,16 +117,11 @@ export default function DashboardPage() {
             <div className="grid gap-4">
                 <Card>
                     <CardHeader>
-                        <CardTitle>Filters</CardTitle>
-                        <CardDescription>Select an ad account and date range to view performance data</CardDescription>
+                        <CardTitle>Ad Account Selection</CardTitle>
+                        <CardDescription>Select an ad account to view performance data</CardDescription>
                     </CardHeader>
-                    <CardContent className="flex flex-col gap-4 md:flex-row">
-                        <AdAccountSelector onSelectAccount={setSelectedAccount} className="w-full md:w-1/3" />
-                        <DatePickerWithRange
-                            className="w-full md:w-2/3"
-                            onChange={handleDateRangeChange}
-                            value={dateRange}
-                        />
+                    <CardContent>
+                        <AdAccountSelector onSelectAccount={setSelectedAccount} className="w-full md:w-1/2" />
                     </CardContent>
                 </Card>
 
