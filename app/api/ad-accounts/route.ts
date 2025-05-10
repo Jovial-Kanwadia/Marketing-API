@@ -3,7 +3,7 @@ import { NextResponse } from "next/server"
 import { authOptions } from "@/app/api/auth/[...nextauth]/route" // Adjust this path to your auth options file
 
 // Define the extended session type that includes accessToken
-interface ExtendedSession {
+export interface ExtendedSession {
   user?: {
     name?: string | null
     email?: string | null

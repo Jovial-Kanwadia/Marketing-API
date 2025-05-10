@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth/next"
 import { authOptions } from "@/app/api/auth/[...nextauth]/route"
+import { ExtendedSession } from "../ad-accounts/route";
+
 
 // Helper function to fetch paginated data from Facebook API
 async function fetchPaginated(url: string, accessToken: string) {
-  let data = [];
+  let data: any[] = [];
   let nextUrl = url;
   while (nextUrl) {
     try {
@@ -51,7 +53,7 @@ function getISOWeek(date: Date): string {
 }
 
 export async function GET(request: Request) {
-  const session = await getServerSession(authOptions);
+  const session: any = await getServerSession(authOptions);
   
   if (!session || !session.user) {
     return new NextResponse(JSON.stringify({ error: "Unauthorized" }), {
@@ -140,23 +142,23 @@ export async function GET(request: Request) {
         "Impressions": insight.impressions || "0",
         "Clicks (all)": insight.clicks || "0",
         "Link Clicks": insight.inline_link_clicks || "0",
-        "Landing Page views": insight.actions?.find((a) => a.action_type === "landing_page_view")?.value || "0",
-        "View Content": insight.actions?.find((a) => a.action_type === "view_content")?.value || "0",
-        "View Content Conversion Value": insight.action_values?.find((a) => a.action_type === "view_content")?.value || "0",
-        "Add To Wishlist": insight.actions?.find((a) => a.action_type === "add_to_wishlist")?.value || "0",
-        "Add To Wishlist Conversion Value": insight.action_values?.find((a) => a.action_type === "add_to_wishlist")?.value || "0",
-        "Add To Cart": insight.actions?.find((a) => a.action_type === "add_to_cart")?.value || "0",
-        "Add To Cart Conversion Value": insight.action_values?.find((a) => a.action_type === "add_to_cart")?.value || "0",
-        "Initiated Checkout": insight.actions?.find((a) => a.action_type === "initiate_checkout")?.value || "0",
-        "Initiated Checkout Conversion Value": insight.action_values?.find((a) => a.action_type === "initiate_checkout")?.value || "0",
-        "Adds Payment Info": insight.actions?.find((a) => a.action_type === "add_payment_info")?.value || "0",
-        "Add Payment Info Conversion Value": insight.action_values?.find((a) => a.action_type === "add_payment_info")?.value || "0",
-        "Purchase": insight.actions?.find((a) => a.action_type === "purchase")?.value || "0",
-        "Purchase Conversion Value": insight.action_values?.find((a) => a.action_type === "purchase")?.value || "0",
-        "Leads": insight.actions?.find((a) => a.action_type === "lead")?.value || "0",
-        "Lead Conversion Value": insight.action_values?.find((a) => a.action_type === "lead")?.value || "0",
-        "Contact": insight.actions?.find((a) => a.action_type === "contact")?.value || "0",
-        "Contact Conversion Value": insight.action_values?.find((a) => a.action_type === "contact")?.value || "0",
+        "Landing Page views": insight.actions?.find((a: { action_type: string; }) => a.action_type === "landing_page_view")?.value || "0",
+        "View Content": insight.actions?.find((a: { action_type: string; }) => a.action_type === "view_content")?.value || "0",
+        "View Content Conversion Value": insight.action_values?.find((a: { action_type: string; }) => a.action_type === "view_content")?.value || "0",
+        "Add To Wishlist": insight.actions?.find((a: { action_type: string; }) => a.action_type === "add_to_wishlist")?.value || "0",
+        "Add To Wishlist Conversion Value": insight.action_values?.find((a: { action_type: string; }) => a.action_type === "add_to_wishlist")?.value || "0",
+        "Add To Cart": insight.actions?.find((a: { action_type: string; }) => a.action_type === "add_to_cart")?.value || "0",
+        "Add To Cart Conversion Value": insight.action_values?.find((a: { action_type: string; }) => a.action_type === "add_to_cart")?.value || "0",
+        "Initiated Checkout": insight.actions?.find((a: { action_type: string; }) => a.action_type === "initiate_checkout")?.value || "0",
+        "Initiated Checkout Conversion Value": insight.action_values?.find((a: { action_type: string; }) => a.action_type === "initiate_checkout")?.value || "0",
+        "Adds Payment Info": insight.actions?.find((a: { action_type: string; }) => a.action_type === "add_payment_info")?.value || "0",
+        "Add Payment Info Conversion Value": insight.action_values?.find((a: { action_type: string; }) => a.action_type === "add_payment_info")?.value || "0",
+        "Purchase": insight.actions?.find((a: { action_type: string; }) => a.action_type === "purchase")?.value || "0",
+        "Purchase Conversion Value": insight.action_values?.find((a: { action_type: string; }) => a.action_type === "purchase")?.value || "0",
+        "Leads": insight.actions?.find((a: { action_type: string; }) => a.action_type === "lead")?.value || "0",
+        "Lead Conversion Value": insight.action_values?.find((a: { action_type: string; }) => a.action_type === "lead")?.value || "0",
+        "Contact": insight.actions?.find((a: { action_type: string; }) => a.action_type === "contact")?.value || "0",
+        "Contact Conversion Value": insight.action_values?.find((a: { action_type: string; }) => a.action_type === "contact")?.value || "0",
       };
     });
 
@@ -182,7 +184,7 @@ export async function GET(request: Request) {
         "Impressions": insight.impressions || "0",
         "Clicks (all)": insight.clicks || "0",
         "Link Clicks": insight.inline_link_clicks || "0",
-        "Landing Page views": insight.actions?.find((a) => a.action_type === "landing_page_view")?.value || "0",
+        "Landing Page views": insight.actions?.find((a: { action_type: string; }) => a.action_type === "landing_page_view")?.value || "0",
       };
     });
 
