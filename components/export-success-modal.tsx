@@ -26,17 +26,22 @@ export function ExportSuccessModal({ isOpen, onClose, exportType, exportUrl }: E
             <CheckCircle2 className="h-6 w-6 text-green-500" />
             <AlertDialogTitle className="text-xl">Export Successful</AlertDialogTitle>
           </div>
+          {/* Simple text content in AlertDialogDescription */}
           <AlertDialogDescription className="pt-2">
-            {exportType === "looker" ? (
-              <div className="space-y-2">
-                <p>Your data has been successfully exported to Looker Studio.</p>
-                <p>Click the button below to open Looker Studio and create your report.</p>
-              </div>
-            ) : (
-              <p>Your data has been successfully exported as {exportType.toUpperCase()}.</p>
-            )}
+            {exportType === "looker" 
+              ? "Your data has been successfully exported to Looker Studio."
+              : `Your data has been successfully exported as ${exportType.toUpperCase()}.`
+            }
           </AlertDialogDescription>
         </AlertDialogHeader>
+        
+        {/* Move additional content outside of AlertDialogDescription */}
+        {exportType === "looker" && (
+          <div className="py-2">
+            <p>Click the button below to open Looker Studio and create your report.</p>
+          </div>
+        )}
+        
         <AlertDialogFooter className="flex flex-col sm:flex-row sm:justify-between gap-2">
           <AlertDialogCancel onClick={onClose}>Close</AlertDialogCancel>
           {exportType === "looker" && exportUrl && (
